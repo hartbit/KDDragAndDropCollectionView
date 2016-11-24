@@ -48,11 +48,11 @@ public class KDDragAndDropManager: NSObject, UIGestureRecognizerDelegate {
 	fileprivate var longPressGestureRecogniser = UILongPressGestureRecognizer()
 	fileprivate var dragInProgress: Bool = false
 	
-	public init(canvas: UIView, collectionViews: [UIView]) {
+	public init(canvas: UIView, views: [UIView]) {
 		super.init()
 		
 		self.canvas = canvas
-		self.views = collectionViews
+		self.views = views
 		
 		longPressGestureRecogniser.delegate = self
 		longPressGestureRecogniser.minimumPressDuration = 0.3
@@ -61,11 +61,11 @@ public class KDDragAndDropManager: NSObject, UIGestureRecognizerDelegate {
 	}
 	
 	public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-		for view in views {
+		for view in views where view is KDDraggable {
+			let draggable = view as! KDDraggable
 			let locationInView = touch.location(in: view)
 			
-			guard let draggable = view as? KDDraggable,
-				draggable.canDrag(at: locationInView),
+			guard draggable.canDrag(at: locationInView),
 				let representation = draggable.representationImage(at: locationInView) else
 			{
 				continue
@@ -122,7 +122,7 @@ fileprivate extension KDDragAndDropManager {
 			var overlappingArea: CGFloat = 0.0
 			var mainOverView: UIView?
 				
-			for view in views.filter({ $0 is KDDroppable }) {
+			for view in views where view is KDDroppable {
 				let viewFrameOnCanvas = convertToCanvas(rect: view.frame, from: view)
 				let intersectionNew = bundle.representationImageView.frame.intersection(viewFrameOnCanvas).size
 
@@ -173,12 +173,11 @@ fileprivate extension KDDragAndDropManager {
 			UIView.animate(withDuration: 0.3, animations: {
 				bundle.representationImageView.frame = dropRect!
 			}, completion: { [weak self] (_) in
+				guard let `self` = self else { return }
 				bundle.representationImageView.removeFromSuperview()
 				sourceDraggable.didStopDragging?()
-				if let _self = self {
-					_self.delegate?.didEndDragging(_self)
-					_self.bundle = nil
-				}
+				self.delegate?.didEndDragging(self)
+				self.bundle = nil
 			})
 				
 		default:

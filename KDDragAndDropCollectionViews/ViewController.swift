@@ -49,7 +49,7 @@ class ViewController: UIViewController {
 			data.append(items)
 		}
 		
-		self.dragAndDropManager = KDDragAndDropManager(canvas: self.view, collectionViews: [firstCollectionView, secondCollectionView, thirdCollectionView])
+		dragAndDropManager = KDDragAndDropManager(canvas: self.view, views: [firstCollectionView, secondCollectionView, thirdCollectionView])
 	}
 }
 
