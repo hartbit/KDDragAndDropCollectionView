@@ -338,16 +338,13 @@ fileprivate extension KDDragAndDropCollectionView {
 	
 	func indexPathOfNearestVisibleCell(from rect: CGRect) -> IndexPath? {
 		let origin = CGPoint(x: rect.midX, y: rect.midY)
-		let a =
+		return
 			visibleCells
 			.filter { cell in
 				let superviewFrame = superview!.convert(cell.frame, from: self)
 				let intersection = superviewFrame.intersection(frame)
-				print("rect \(intersection)")
 				return intersection.area >= cell.frame.area / 3
 			}
-		
-		return a
 			.map { (cell: $0, distance: $0.center.distance(from: origin)) }
 			.sorted(by: { $0.distance < $1.distance })
 			.first
