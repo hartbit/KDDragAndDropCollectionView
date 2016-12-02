@@ -38,7 +38,9 @@ class ViewController: UIViewController {
 			UIColor(red: 138.0/255.0, green: 149.0/255.0, blue: 86.0/255.0, alpha: 1.0)
 		]
 		
-		for i in 0...2 {
+		data.append([])
+		
+		for i in 1...2 {
 			var items = [DataItem]()
 			
 			for j in 0...20 {

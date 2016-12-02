@@ -124,13 +124,14 @@ extension KDDragAndDropCollectionView : KDDraggable {
 
 extension KDDragAndDropCollectionView : KDDroppable {
 	public func canDrop(at rect: CGRect) -> Bool {
-		guard let dataSource = dataSource as? KDDragAndDropCollectionViewDataSource,
-			let indexPath = indexPathForCellOverlappingRect(rect) else
+		if bounds.contains(rect.center),
+			let dataSource = dataSource as? KDDragAndDropCollectionViewDataSource,
+			let indexPath = targetIndexPath(for: rect)
 		{
+			return dataSource.collectionView(self, canDropAt: indexPath)
+		} else {
 			return false
 		}
-		
-		return dataSource.collectionView(self, canDropAt: indexPath)
 	}
 	
 	public func willMoveDataItem(_ item: Any, in rect: CGRect) {
@@ -140,7 +141,7 @@ extension KDDragAndDropCollectionView : KDDroppable {
 			return
 		}
 		
-		if let indexPath = indexPathForCellOverlappingRect(rect) {
+		if let indexPath = targetIndexPath(for: rect) {
 			dataSource.collectionView(self, insertDataItem: item, at: indexPath)
 			
 			indexPathOfDraggedItem = indexPath
@@ -279,7 +280,7 @@ fileprivate extension KDDragAndDropCollectionView {
 		
 		if let currentItem = currentItem, let currentRect = currentRect {
 			moveDataItem(currentItem, at: currentRect)
-			indexPathOfDraggedItem = indexPathForCellOverlappingRect(currentRect)
+			indexPathOfDraggedItem = targetIndexPath(for: currentRect)
 		}
 	}
 	
@@ -332,8 +333,12 @@ fileprivate extension KDDragAndDropCollectionView {
 		self.timer = nil
 	}
 	
-	func indexPathForCellOverlappingRect(_ rect: CGRect) -> IndexPath? {
-		return nearestDropableIndexPath(indexPathOfNearestVisibleCell(from: rect))
+	func targetIndexPath(for rect: CGRect) -> IndexPath? {
+		if totalNumberOfItems > 0 {
+			return nearestDropableIndexPath(indexPathOfNearestVisibleCell(from: rect))
+		} else {
+			 return IndexPath(item: 0, section: 0)
+		}
 	}
 	
 	func indexPathOfNearestVisibleCell(from rect: CGRect) -> IndexPath? {
@@ -342,7 +347,7 @@ fileprivate extension KDDragAndDropCollectionView {
 			visibleCells
 			.filter { cell in
 				let superviewFrame = superview!.convert(cell.frame, from: self)
-				let intersection = superviewFrame.intersection(frame)
+				let intersection = superviewFrame.intersection(rect)
 				return intersection.area >= cell.frame.area / 3
 			}
 			.map { (cell: $0, distance: $0.center.distance(from: origin)) }
@@ -372,7 +377,7 @@ fileprivate extension KDDragAndDropCollectionView {
 	func moveDataItem(_ item: Any, at rect: CGRect) {
 		guard let dataSource = dataSource as? KDDragAndDropCollectionViewDataSource,
 			let existingIndexPath = dataSource.collectionView(self, indexPathForDataItem: item),
-			let indexPath = indexPathForCellOverlappingRect(rect),
+			let indexPath = targetIndexPath(for: rect),
 			indexPath.item != existingIndexPath.item else
 		{
 			return
@@ -391,9 +396,21 @@ fileprivate extension KDDragAndDropCollectionView {
 	}
 }
 
+extension UICollectionView {
+	var totalNumberOfItems: Int {
+		return (0..<numberOfSections)
+			.map { self.numberOfItems(inSection: $0) }
+			.reduce(0, +)
+	}
+}
+
 extension CGRect {
 	var area: CGFloat {
 		return width * height
+	}
+	
+	var center: CGPoint {
+		return CGPoint(x: midX, y: midY)
 	}
 }
 
